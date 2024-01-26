@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connect Four</title>
+  <style>
+    .board {
+      display: grid;
+      grid-template-columns: repeat(7, 50px);
+      gap: 5px;
+      margin-top: 20px;
+    }
+
+    .cell {
+      width: 50px;
+      height: 50px;
+      border: 1px solid #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div id="message"></div>
+<div class="board" id="board"></div>
+
+<script>
+  const ROWS = 6;
+  const COLS = 7;
+  const MAX_DEPTH = 4; // Depth limit for the minimax algorithm
+  let board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+  let currentPlayer = 'X';
+  let gameOver = false;
+
+  const boardElement = document.getElementById('board');
+  const messageElement = document.getElementById('message');
+
+  // Create the game board
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      cell.dataset.row = row;
+      cell.dataset.col = col;
+      cell.addEventListener('click', handleCellClick);
+      boardElement.appendChild(cell);
+    }
+  }
+
+  function handleCellClick(event) {
+    if (gameOver) return;
+    const row = parseInt(event.target.dataset.row);
+    const col = parseInt(event.target.dataset.col);
+
+    if (isValidMove(row, col)) {
+      makeMove(row, col, currentPlayer);
+      if (checkWinner(row, col, currentPlayer)) {
+        gameOver = true;
+        showMessage(`${currentPlayer} wins!`);
+      } else if (isBoardFull()) {
+        gameOver = true;
+        showMessage('It\'s a draw!');
+      } else {
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        if (currentPlayer === 'O') {
+          // Computer's turn
+          setTimeout(makeComputerMove, 500);
+        }
+      }
+    }
+  }
+
+  function isValidMove(row, col) {
+    return board[row][col] === null && (row === ROWS - 1 || board[row + 1][col] !== null);
+  }
+
+  function makeMove(row, col, player) {
+    board[row][col] = player;
+    updateBoard();
+  }
+
+  function makeComputerMove() {
+    const bestMove = getBestMove();
+    makeMove(bestMove.row, bestMove.col, currentPlayer);
+    if (checkWinner(bestMove.row, bestMove.col, currentPlayer)) {
+      gameOver = true;
+      showMessage(`${currentPlayer} wins!`);
+    } else if (isBoardFull()) {
+      gameOver = true;
+      showMessage('It\'s a draw!');
+    } else {
+      currentPlayer = 'X';
+    }
+  }
+
+  function getBestMove() {
+    // Simple minimax algorithm with alpha-beta pruning
+    let bestScore = -Infinity;
+    let bestMove = null;
+
+    for (let col = 0; col < COLS; col++) {
+      const row = getEmptyRow(col);
+      if (row !== -1) {
+        board[row][col] = currentPlayer;
+        const score = minimax(board, 0, -Infinity, Infinity, false);
+        board[row][col] = null;
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMove = { row, col };
+        }
+      }
+    }
+
+    return bestMove;
+  }
+
+  function minimax(board, depth, alpha, beta, isMaximizing) {
+    const winner = getWinner();
+    if (winner) {
+      return winner === 'O' ? 1 : -1;
+    }
+
+    if (isBoardFull() || depth === MAX_DEPTH) {
+      return 0;
+    }
+
+    if (isMaximizing) {
+      let maxEval = -Infinity;
+      for (let col = 0; col < COLS; col++) {
+        const row = getEmptyRow(col);
+        if (row !== -1) {
+          board[row][col] = 'O';
+          const eval = minimax(board, depth + 1, alpha, beta, false);
+          board[row][col] = null;
+          maxEval = Math.max(maxEval, eval);
+          alpha = Math.max(alpha, eval);
+          if (beta <= alpha) {
+            break; // Beta cut-off
+          }
+        }
+      }
+      return maxEval;
+    } else {
+      let minEval = Infinity;
+      for (let col = 0; col < COLS; col++) {
+        const row = getEmptyRow(col);
+        if (row !== -1) {
+          board[row][col] = 'X';
+          const eval = minimax(board, depth + 1, alpha, beta, true);
+          board[row][col] = null;
+          minEval = Math.min(minEval, eval);
+          beta = Math.min(beta, eval);
+          if (beta <= alpha) {
+            break; // Alpha cut-off
+          }
+        }
+      }
+      return minEval;
+    }
+  }
+
+  function getEmptyRow(col) {
+    for (let row = ROWS - 1; row >= 0; row--) {
+      if (board[row][col] === null) {
+        return row;
+      }
+    }
+    return -1;
+  }
+
+  function updateBoard() {
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+        cell.textContent = board[row][col] || '';
+      }
+    }
+  }
+
+  function checkWinner(row, col, player) {
+    // Check horizontally
+    if (
+      countConsecutive(board, row, col, 0, 1, player) +
+      countConsecutive(board, row, col, 0, -1, player) >= 3
+    ) {
+      return true;
+    }
+
+    // Check vertically
+    if (
+      countConsecutive(board, row, col, 1, 0, player) >= 3
+    ) {
+      return true;
+    }
+
+    // Check diagonally (left-up to right-down)
+    if (
+      countConsecutive(board, row, col, 1, 1, player) +
+      countConsecutive(board, row, col, -1, -1, player) >= 3
+    ) {
+      return true;
+    }
+
+    // Check diagonally (left-down to right-up)
+    if (
+      countConsecutive(board, row, col, -1, 1, player) +
+      countConsecutive(board, row, col, 1, -1, player) >= 3
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  function countConsecutive(board, row, col, rowDirection, colDirection, player) {
+    let count = 0;
+    let currentRow = row + rowDirection;
+    let currentCol = col + colDirection;
+
+    while (
+      currentRow >= 0 &&
+      currentRow < ROWS &&
+      currentCol >= 0 &&
+      currentCol < COLS &&
+      board[currentRow][currentCol] === player
+    ) {
+      count++;
+      currentRow += rowDirection;
+      currentCol += colDirection;
+    }
+
+    return count;
+  }
+
+  function getWinner() {
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const player = board[row][col];
+        if (player !== null && checkWinner(row, col, player)) {
+          return player;
+        }
+      }
+    }
+    return null;
+  }
+
+  function isBoardFull() {
+    return board.every(row => row.every(cell => cell !== null));
+  }
+
+  function showMessage(message) {
+    messageElement.textContent = message;
+  }
+</script>
+
+</body>
+</html>
