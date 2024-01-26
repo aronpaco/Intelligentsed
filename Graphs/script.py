@@ -36,7 +36,7 @@ def find_capitals_within_radius(start, end, radius_km):
         ) <= radius_km]
         
         if not nearest_capitals:
-            print("No capitals within a", radius, " km radius. Exiting.")
+            print("No capitals within a", radius, " km radius")
             break
 
         nearest_capitals.sort(key=lambda capital: haversine(
@@ -66,20 +66,16 @@ def main():
         visualize_route(route)
 
 def visualize_route(route):
-    # Create a folium map centered on the first capital in the route
     map_center = (route[0]['latitude'], route[0]['longitude'])
     m = folium.Map(location=map_center, zoom_start=4)
 
-    # Add markers for each capital in the route
     for capital in route:
         folium.Marker(location=(capital['latitude'], capital['longitude']),
                       popup=f"{capital['city']}, {capital['country']}").add_to(m)
 
-    # Add a line connecting the capitals to represent the route
     folium.PolyLine([(capital['latitude'], capital['longitude']) for capital in route],
                     color="blue", weight=2.5, opacity=1).add_to(m)
 
-    # Save the map as an HTML file
     m.save("route_map.html")
 
 

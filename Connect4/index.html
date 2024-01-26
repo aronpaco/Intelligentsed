@@ -32,7 +32,7 @@
 <script>
   const ROWS = 6;
   const COLS = 7;
-  const MAX_DEPTH = 4; // Depth limit for the minimax algorithm
+  const MAX_DEPTH = 7;
   let board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
   let currentPlayer = 'X';
   let gameOver = false;
@@ -40,7 +40,6 @@
   const boardElement = document.getElementById('board');
   const messageElement = document.getElementById('message');
 
-  // Create the game board
   for (let row = 0; row < ROWS; row++) {
     for (let col = 0; col < COLS; col++) {
       const cell = document.createElement('div');
@@ -64,11 +63,10 @@
         showMessage(`${currentPlayer} wins!`);
       } else if (isBoardFull()) {
         gameOver = true;
-        showMessage('It\'s a draw!');
+        showMessage('Draw!');
       } else {
         currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
         if (currentPlayer === 'O') {
-          // Computer's turn
           setTimeout(makeComputerMove, 500);
         }
       }
@@ -92,14 +90,13 @@
       showMessage(`${currentPlayer} wins!`);
     } else if (isBoardFull()) {
       gameOver = true;
-      showMessage('It\'s a draw!');
+      showMessage('Draw!');
     } else {
       currentPlayer = 'X';
     }
   }
 
   function getBestMove() {
-    // Simple minimax algorithm with alpha-beta pruning
     let bestScore = -Infinity;
     let bestMove = null;
 
@@ -141,7 +138,7 @@
           maxEval = Math.max(maxEval, eval);
           alpha = Math.max(alpha, eval);
           if (beta <= alpha) {
-            break; // Beta cut-off
+            break;
           }
         }
       }
@@ -157,7 +154,7 @@
           minEval = Math.min(minEval, eval);
           beta = Math.min(beta, eval);
           if (beta <= alpha) {
-            break; // Alpha cut-off
+            break;
           }
         }
       }
@@ -184,7 +181,6 @@
   }
 
   function checkWinner(row, col, player) {
-    // Check horizontally
     if (
       countConsecutive(board, row, col, 0, 1, player) +
       countConsecutive(board, row, col, 0, -1, player) >= 3
@@ -192,14 +188,12 @@
       return true;
     }
 
-    // Check vertically
     if (
       countConsecutive(board, row, col, 1, 0, player) >= 3
     ) {
       return true;
     }
 
-    // Check diagonally (left-up to right-down)
     if (
       countConsecutive(board, row, col, 1, 1, player) +
       countConsecutive(board, row, col, -1, -1, player) >= 3
@@ -207,7 +201,6 @@
       return true;
     }
 
-    // Check diagonally (left-down to right-up)
     if (
       countConsecutive(board, row, col, -1, 1, player) +
       countConsecutive(board, row, col, 1, -1, player) >= 3

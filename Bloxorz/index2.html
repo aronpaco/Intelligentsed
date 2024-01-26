@@ -111,7 +111,7 @@
       updatePlayerPosition();
 
       if (playerPosition.x === finishPosition.x && playerPosition.y === finishPosition.y) {
-        alert("Congratulations! You reached the finish!");
+        alert("You reached the finish!");
         resetGame();
       }
     }
@@ -153,8 +153,7 @@
           return true;
         }
 
-        // If no path found, backtrack
-        markPath(x, y); // Mark as part of the unsuccessful path
+        markPath(x, y);
         return false;
       }
 
@@ -163,7 +162,7 @@
 
     createGameBoard();
     updatePlayerPosition();
-    findPath(); // Find and mark the path when the game starts
+    findPath();
     window.addEventListener("keydown", movePlayer);
   </script>
 </body>
