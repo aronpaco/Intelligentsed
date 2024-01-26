@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Computer Hangman</title>
+</head>
+<body>
+    <h1>Computer Hangman</h1>
+    <p id="word-display"></p>
+    <p id="guesses-left">Guesses left: <span id="remaining-guesses">6</span></p>
+
+    <script>
+        // Fetch words from the text file
+        // salvesta otsing nupp
+        
+        let words = [];
+        fetch("lemmad.txt")
+            .then((response) => response.text())
+            .then((data) => {
+                // Split the file content into an array of words (assuming one word per line)
+                words = data
+                .trim()
+                .split("\n")
+                .map((word) => word.trim().toLowerCase());
+                // Initialize the game when the page loads
+            initializeGame();
+            setTimeout(playGame, 1000); // Start the game loop
+
+            // Example usage of finding words with the same length
+            console.log("Words with the same length as the random word:", findWordsWithSameLength());
+            console.log({words})
+
+           })
+           .catch((error) => console.error("Error loading words:", error));
+
+        // Function to select a random word from the list
+        function getRandomWord() {
+            return words[Math.floor(Math.random() * words.length)];
+        }
+
+        // Function to filter words by length
+        function filterWordsByLength(length) {
+            return words.filter(word => word.length === length);
+        }
+
+        // Initialize the game
+        function initializeGame() {
+            wordToGuess = getRandomWord().toLowerCase();
+            guessedWord = Array(wordToGuess.length).fill("_");
+            remainingGuesses = 6;
+            guessedLetters = [];
+            characterFrequency = {};
+
+            // Calculate character frequency
+            words.forEach(word => {
+                word.split('').forEach(char => {
+                    if (!characterFrequency[char]) {
+                        characterFrequency[char] = 1;
+                    } else {
+                        characterFrequency[char]++;
+                    }
+                });
+            });
+
+            updateDisplay();
+        }
+
+        // Update the display
+        function updateDisplay() {
+            document.getElementById("word-display").textContent = guessedWord.join(" ");
+            document.getElementById("remaining-guesses").textContent = remainingGuesses;
+        }
+
+        // Function for the computer to guess a letter
+        function computerGuess() {
+            // Implement minimax algorithm here to guess the next character based on characterFrequency and guessedWord
+            // For a simple example, let's guess the most frequent character that hasn't been guessed yet.
+            const sortedFrequency = Object.keys(characterFrequency)
+                .filter(char => !guessedLetters.includes(char))
+                .sort((a, b) => characterFrequency[b] - characterFrequency[a]);
+
+            if (sortedFrequency.length > 0) {
+                console.log(sortedFrequency[0]);
+                return sortedFrequency[0];
+            } else {
+                // No characters left to guess
+                return '';
+            }
+        }
+
+        // Function to find words with the same length as the random word
+        function findWordsWithSameLength() {
+            const wordsWithSameLength = filterWordsByLength(wordToGuess.length);
+            return wordsWithSameLength;
+        }
+
+        // Function to filter words by guessed pattern
+        function filterWordsByPattern(pattern) {
+            console.log({pattern})
+            return words.filter(word => {
+                if (word.length !== pattern.length) {
+                    return false;
+                }
+                for (let i = 0; i < pattern.length; i++) {
+                    if (pattern[i] !== '_' && pattern[i] !== word[i]) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+        }
+
+        // Modify the computerGuess function
+        function computerGuess() {
+            // Check if there are any words matching the current guessed pattern
+            const filteredWords = filterWordsByPattern(guessedWord.join(""));
+            console.log({filteredWords});
+            
+            if (filteredWords.length === 0) {
+                // No words match the current guessed pattern, revert to the previous strategy
+                const sortedFrequency = Object.keys(characterFrequency)
+                    .filter(char => !guessedLetters.includes(char))
+                    .sort((a, b) => characterFrequency[b] - characterFrequency[a]);
+
+                if (sortedFrequency.length > 0) {
+                    return sortedFrequency[0];
+                } else {
+                    // No characters left to guess
+                    return '';
+                }
+            } else {
+                // Calculate character frequency for the filtered words
+                const filteredCharacterFrequency = {};
+                filteredWords.forEach(word => {
+                    word.split('').forEach(char => {
+                        if (!filteredCharacterFrequency[char]) {
+                            filteredCharacterFrequency[char] = 1;
+                        } else {
+                            filteredCharacterFrequency[char]++;
+                        }
+                    });
+                });
+
+                // Guess the most frequent character that hasn't been guessed yet in the filtered words
+                const sortedFilteredFrequency = Object.keys(filteredCharacterFrequency)
+                    .filter(char => !guessedLetters.includes(char))
+                    .sort((a, b) => filteredCharacterFrequency[b] - filteredCharacterFrequency[a]);
+
+                if (sortedFilteredFrequency.length > 0) {
+                    return sortedFilteredFrequency[0];
+                } else {
+                    // No characters left to guess in the filtered words
+                    return '';
+                }
+            }
+        }
+
+        // Main game loop
+        function playGame() {
+            const computerGuessChar = computerGuess();
+            guessedLetters.push(computerGuessChar);
+
+            if (wordToGuess.includes(computerGuessChar)) {
+                for (let i = 0; i < wordToGuess.length; i++) {
+                    if (wordToGuess[i] === computerGuessChar) {
+                        guessedWord[i] = computerGuessChar;
+                    }
+                }
+            } else {
+                remainingGuesses--;
+            }
+
+            updateDisplay();
+
+            if (guessedWord.join("") === wordToGuess) {
+                alert("Computer wins! The word was: " + wordToGuess);
+                initializeGame();
+            } else if (remainingGuesses === 0) {
+                alert("Computer loses! The word was: " + wordToGuess);
+                initializeGame();
+            } else {
+                // Continue the game
+                setTimeout(playGame, 1000); // Delay for better visibility
+            }
+        }
+
+        
+    </script>
+</body>
+</html>

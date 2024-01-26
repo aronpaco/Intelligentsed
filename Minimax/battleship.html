@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Battleship Game</title>
+  <style>
+    .board-container {
+      display: grid;
+      grid-template-columns: repeat(5, 30px);
+      gap: 1px;
+    }
+  
+    .cell {
+      width: 30px;
+      height: 30px;
+      border: 1px solid #000;
+      cursor: pointer;
+    }
+  
+    .ship {
+      background-color: #999;
+    }
+  
+    .hit {
+      background-color: #f00;
+    }
+  
+    .miss {
+      background-color: #00f;
+    }
+  </style>
+  
+</head>
+<body>
+
+<script>
+  const gridSize = 5;
+  const playerBoard = createEmptyBoard();
+  const aiBoard = createEmptyBoard();
+
+  placeShips(playerBoard);
+  placeShips(aiBoard);
+
+  displayBoard('player', playerBoard);
+  displayBoard('ai', aiBoard);
+
+  document.getElementById('ai-board').addEventListener('click', handlePlayerMove);
+
+  setTimeout(handleAIMove, 1000);
+
+  function createEmptyBoard() {
+    return Array.from({ length: gridSize }, () => Array(gridSize).fill(false));
+  }
+
+  function placeShips(board) {
+    // Add logic to randomly place ships on the board
+    // You can modify this function based on the rules of your battleship game
+    for (let i = 0; i < 3; i++) {
+      const row = Math.floor(Math.random() * gridSize);
+      const col = Math.floor(Math.random() * gridSize);
+      board[row][col] = true;
+    }
+  }
+
+  function displayBoard(player, board) {
+    const container = document.createElement('div');
+    container.classList.add('board-container');
+
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.dataset.row = i;
+        cell.dataset.col = j;
+
+        if (board[i][j]) {
+          cell.classList.add('ship');
+        }
+
+        container.appendChild(cell);
+      }
+    }
+
+    document.body.appendChild(container);
+  }
+
+  function handlePlayerMove(event) {
+    const target = event.target;
+    if (!target.classList.contains('cell')) return;
+
+    const row = parseInt(target.dataset.row, 10);
+    const col = parseInt(target.dataset.col, 10);
+
+    // Check if the cell has already been targeted
+    if (aiBoard[row][col] === 'hit' || aiBoard[row][col] === 'miss') {
+      return;
+    }
+
+    if (aiBoard[row][col]) {
+      target.classList.add('hit');
+      aiBoard[row][col] = 'hit';
+    } else {
+      target.classList.add('miss');
+      aiBoard[row][col] = 'miss';
+    }
+
+    if (checkGameOver(aiBoard)) {
+      alert('Congratulations! You won!');
+    } else {
+      setTimeout(handleAIMove, 1000);
+    }
+  }
+
+  function handleAIMove() {
+    const { row, col } = getAIMove();
+    const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+
+    if (playerBoard[row][col]) {
+      cell.classList.add('hit');
+      playerBoard[row][col] = 'hit';
+    } else {
+      cell.classList.add('miss');
+      playerBoard[row][col] = 'miss';
+    }
+
+    if (checkGameOver(playerBoard)) {
+      alert('Sorry! You lost.');
+    }
+  }
+
+  function getAIMove() {
+    // Implement the minimax algorithm to determine the AI's move
+    // This is a simple example; you may need to refine it based on your game's rules
+
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        if (!playerBoard[i][j] && playerBoard[i][j] !== 'miss') {
+          return { row: i, col: j };
+        }
+      }
+    }
+
+    // Fallback: choose a random move if all else fails
+    const randomRow = Math.floor(Math.random() * gridSize);
+    const randomCol = Math.floor(Math.random() * gridSize);
+
+    return { row: randomRow, col: randomCol };
+  }
+
+  function checkGameOver(board) {
+    // Add logic to check if all ships on the board are sunk
+    // You can modify this function based on the rules of your battleship game
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        if (board[i][j] === true) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+</script>
+
+</body>
+</html>

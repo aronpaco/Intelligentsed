@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nim Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    button {
+      font-size: 18px;
+      margin: 5px;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Nim Game</h1>
+<p>Click a pile to remove some stones. You can only remove stones from one pile in each turn.</p>
+
+<div id="game-board"></div>
+<button onclick="resetGame()">Reset Game</button>
+
+<script>
+// Nim game logic
+let piles = [3, 5, 7]; // Initial number of stones in each pile
+let currentPlayer = 0; // 0 for human, 1 for computer
+
+function displayBoard() {
+  const gameBoard = document.getElementById('game-board');
+  gameBoard.innerHTML = '';
+
+  for (let i = 0; i < piles.length; i++) {
+    const pileDiv = document.createElement('div');
+    pileDiv.className = 'pile';
+    pileDiv.textContent = piles[i];
+    pileDiv.addEventListener('click', () => makeMove(i));
+    gameBoard.appendChild(pileDiv);
+  }
+}
+
+function makeMove(pileIndex) {
+  if (currentPlayer === 0) {
+    // Human player's turn
+    const stonesToRemove = prompt(`Remove stones (1-${piles[pileIndex]}):`);
+    if (stonesToRemove !== null) {
+      const stonesToRemoveInt = parseInt(stonesToRemove, 10);
+      if (!isNaN(stonesToRemoveInt) && stonesToRemoveInt >= 1 && stonesToRemoveInt <= piles[pileIndex]) {
+        piles[pileIndex] -= stonesToRemoveInt;
+        switchPlayer();
+        displayBoard();
+        checkGameOver();
+      } else {
+        alert('Invalid input. Please enter a valid number of stones to remove.');
+      }
+    }
+  }
+}
+
+function switchPlayer() {
+  currentPlayer = 1 - currentPlayer;
+  if (currentPlayer === 1) {
+    // Computer's turn
+    setTimeout(makeComputerMove, 500);
+  }
+}
+
+function makeComputerMove() {
+  const bestMove = getBestMove();
+  piles[bestMove.pileIndex] -= bestMove.stonesToRemove;
+  switchPlayer();
+  displayBoard();
+  checkGameOver();
+}
+
+function getBestMove() {
+  // Minimax algorithm
+  let bestScore = -Infinity;
+  let bestMove = null;
+
+  for (let i = 0; i < piles.length; i++) {
+    for (let stonesToRemove = 1; stonesToRemove <= piles[i]; stonesToRemove++) {
+      const newPiles = [...piles];
+      newPiles[i] -= stonesToRemove;
+
+      const score = minimax(newPiles, 0, false);
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = { pileIndex: i, stonesToRemove };
+      }
+    }
+  }
+
+  return bestMove;
+}
+
+function minimax(piles, depth, isMaximizing) {
+  if (checkGameOver(piles)) {
+    return isMaximizing ? -1 : 1;
+  }
+
+  if (isMaximizing) {
+    let maxScore = -Infinity;
+
+    for (let i = 0; i < piles.length; i++) {
+      for (let stonesToRemove = 1; stonesToRemove <= piles[i]; stonesToRemove++) {
+        const newPiles = [...piles];
+        newPiles[i] -= stonesToRemove;
+
+        const score = minimax(newPiles, depth + 1, false);
+        maxScore = Math.max(maxScore, score);
+      }
+    }
+
+    return maxScore;
+  } else {
+    let minScore = Infinity;
+
+    for (let i = 0; i < piles.length; i++) {
+      for (let stonesToRemove = 1; stonesToRemove <= piles[i]; stonesToRemove++) {
+        const newPiles = [...piles];
+        newPiles[i] -= stonesToRemove;
+
+        const score = minimax(newPiles, depth + 1, true);
+        minScore = Math.min(minScore, score);
+      }
+    }
+
+    return minScore;
+  }
+}
+
+function checkGameOver() {
+  if (piles.every(pile => pile === 0)) {
+    if (currentPlayer === 0) {
+      alert('You win!');
+    } else {
+      alert('Computer wins!');
+    }
+    resetGame();
+  }
+}
+
+function resetGame() {
+  piles = [3, 5, 7];
+  currentPlayer = 0;
+  displayBoard();
+}
+
+// Initial display
+displayBoard();
+</script>
+
+</body>
+</html>

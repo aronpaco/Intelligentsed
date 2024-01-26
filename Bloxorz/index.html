@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(10, 30px);
+      grid-template-rows: repeat(10, 30px);
+      gap: 1px;
+      border: 1px solid #333;
+    }
+
+    .cell {
+      width: 30px;
+      height: 30px;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .start {
+      background-color: #00f;
+    }
+
+    .end {
+      background-color: #f00;
+    }
+
+    .obstacle {
+      background-color: #333;
+    }
+
+    .path {
+      background-color: #0f0;
+    }
+  </style>
+  <title>Pathfinding AI</title>
+</head>
+<body>
+
+<div id="grid" class="grid"></div>
+
+<script>
+  const gridSize = 10;
+  const grid = [];
+  const start = { row: 0, col: 0 };
+  const end = { row: 9, col: 9 };
+
+  // Initialize grid
+  for (let row = 0; row < gridSize; row++) {
+    const rowArray = [];
+    for (let col = 0; col < gridSize; col++) {
+      rowArray.push({ row, col, isObstacle: Math.random() < 0.2 });
+    }
+    grid.push(rowArray);
+  }
+
+  // Display grid
+  const gridElement = document.getElementById('grid');
+  for (let row = 0; row < gridSize; row++) {
+    for (let col = 0; col < gridSize; col++) {
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      if (row === start.row && col === start.col) {
+        cell.classList.add('start');
+      } else if (row === end.row && col === end.col) {
+        cell.classList.add('end');
+      } else if (grid[row][col].isObstacle) {
+        cell.classList.add('obstacle');
+      }
+      gridElement.appendChild(cell);
+    }
+  }
+
+// A* algorithm
+function findPath() {
+  const openSet = [];
+  const closedSet = [];
+
+  openSet.push(grid[start.row][start.col]);
+
+  while (openSet.length > 0) {
+    let current = openSet[0];
+    for (let i = 1; i < openSet.length; i++) {
+      if (openSet[i].f < current.f || (openSet[i].f === current.f && openSet[i].h < current.h)) {
+        current = openSet[i];
+      }
+    }
+
+    // Remove current from openSet
+    openSet.splice(openSet.indexOf(current), 1);
+    closedSet.push(current);
+
+    if (current.row === end.row && current.col === end.col) {
+      // Path found, reconstruct and mark the path
+      let path = [];
+      let temp = current;
+      while (temp.parent) {
+        path.push(temp);
+        temp = temp.parent;
+      }
+      path.push(grid[start.row][start.col]);
+
+      // Mark the path cells
+      for (let i = 1; i < path.length; i++) {
+        const pathCell = path[i];
+        const cellElement = document.querySelector(`.cell[data-row="${pathCell.row}"][data-col="${pathCell.col}"]`);
+        cellElement.classList.add('path');
+      }
+      break;
+    }
+
+    const neighbors = getNeighbors(current);
+
+    for (const neighbor of neighbors) {
+      if (!closedSet.includes(neighbor) && !neighbor.isObstacle) {
+        const tempG = current.g + 1;
+
+        if (!openSet.includes(neighbor) || tempG < neighbor.g) {
+          neighbor.g = tempG;
+          neighbor.h = heuristic(neighbor, end);
+          neighbor.f = neighbor.g + neighbor.h;
+          neighbor.parent = current;
+
+          if (!openSet.includes(neighbor)) {
+            openSet.push(neighbor);
+          }
+        }
+      }
+    }
+  }
+}
+
+// Call the function to find the path
+findPath();
+
+
+</script>
+
+</body>
+</html>

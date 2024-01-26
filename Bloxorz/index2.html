@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bloxorz</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    #game-board {
+      display: grid;
+      grid-template-columns: repeat(10, 50px);
+      grid-template-rows: repeat(10, 50px);
+    }
+
+    .cell {
+      width: 50px;
+      height: 50px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .path {
+      background-color: lightgreen;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-board"></div>
+
+  <script>
+    const boardSize = 10;
+    let playerPosition = { x: 0, y: 0 };
+    const startPosition = { x: 0, y: 0 };
+    const finishPosition = { x: boardSize - 1, y: boardSize - 1 };
+    const numObstructions = 10;
+
+    function createGameBoard() {
+      const gameBoard = document.getElementById("game-board");
+
+      for (let row = 0; row < boardSize; row++) {
+        for (let col = 0; col < boardSize; col++) {
+          const cell = document.createElement("div");
+          cell.classList.add("cell");
+          cell.setAttribute("data-row", row);
+          cell.setAttribute("data-col", col);
+
+          if (row === startPosition.y && col === startPosition.x) {
+            cell.textContent = "S";
+          } else if (row === finishPosition.y && col === finishPosition.x) {
+            cell.textContent = "F";
+          } else if (Math.random() < numObstructions / (boardSize * boardSize)) {
+            cell.textContent = "X";
+          }
+
+          gameBoard.appendChild(cell);
+        }
+      }
+    }
+
+    function updatePlayerPosition() {
+      const playerCell = document.querySelector(`.cell[data-row="${playerPosition.y}"][data-col="${playerPosition.x}"]`);
+      playerCell.textContent = "P";
+    }
+
+    function clearPlayerPosition() {
+      const playerCell = document.querySelector(`.cell[data-row="${playerPosition.y}"][data-col="${playerPosition.x}"]`);
+      playerCell.textContent = "";
+    }
+
+    function isObstruction(x, y) {
+      const cell = document.querySelector(`.cell[data-row="${y}"][data-col="${x}"]`);
+      return cell.textContent === "X";
+    }
+
+    function movePlayer(event) {
+      clearPlayerPosition();
+
+      let newPlayerX = playerPosition.x;
+      let newPlayerY = playerPosition.y;
+
+      switch (event.key) {
+        case "ArrowUp":
+          newPlayerY = Math.max(playerPosition.y - 1, 0);
+          break;
+        case "ArrowDown":
+          newPlayerY = Math.min(playerPosition.y + 1, boardSize - 1);
+          break;
+        case "ArrowLeft":
+          newPlayerX = Math.max(playerPosition.x - 1, 0);
+          break;
+        case "ArrowRight":
+          newPlayerX = Math.min(playerPosition.x + 1, boardSize - 1);
+          break;
+      }
+
+      if (!isObstruction(newPlayerX, newPlayerY)) {
+        playerPosition.x = newPlayerX;
+        playerPosition.y = newPlayerY;
+      }
+
+      updatePlayerPosition();
+
+      if (playerPosition.x === finishPosition.x && playerPosition.y === finishPosition.y) {
+        alert("Congratulations! You reached the finish!");
+        resetGame();
+      }
+    }
+
+    function resetGame() {
+      clearPlayerPosition();
+      playerPosition = { x: startPosition.x, y: startPosition.y };
+      updatePlayerPosition();
+      resetPath();
+      findPath();
+    }
+
+    function markPath(x, y) {
+      const cell = document.querySelector(`.cell[data-row="${y}"][data-col="${x}"]`);
+      cell.classList.add("path");
+    }
+
+    function resetPath() {
+      const pathCells = document.querySelectorAll('.cell.path');
+      pathCells.forEach(cell => cell.classList.remove('path'));
+    }
+
+    function findPath() {
+      const visited = new Set();
+
+      function dfs(x, y) {
+        if (x < 0 || x >= boardSize || y < 0 || y >= boardSize || isObstruction(x, y) || visited.has(`${x}-${y}`)) {
+          return false;
+        }
+
+        markPath(x, y);
+        visited.add(`${x}-${y}`);
+
+        if (x === finishPosition.x && y === finishPosition.y) {
+          return true;
+        }
+
+        if (dfs(x + 1, y) || dfs(x, y + 1) || dfs(x - 1, y) || dfs(x, y - 1)) {
+          return true;
+        }
+
+        // If no path found, backtrack
+        markPath(x, y); // Mark as part of the unsuccessful path
+        return false;
+      }
+
+      dfs(startPosition.x, startPosition.y);
+    }
+
+    createGameBoard();
+    updatePlayerPosition();
+    findPath(); // Find and mark the path when the game starts
+    window.addEventListener("keydown", movePlayer);
+  </script>
+</body>
+</html>
